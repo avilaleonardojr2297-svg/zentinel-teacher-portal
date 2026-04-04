@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
-// Idinagdag ang FileSpreadsheet dito sa import
 import { Search, Trash2, CheckCircle, XCircle, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import AlertModal from '../components/AlertModal';
@@ -15,20 +14,22 @@ export default function StudentsList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
-    const [alertConfig, setAlertConfig] = useState({
+  // --- MODAL STATE ---
+  const [alertConfig, setAlertConfig] = useState({
     isOpen: false,
     type: 'info',
     title: '',
     message: '',
     onConfirm: () => {}
-    });
+  });
 
-    const showAlert = (type, title, message, onConfirm = () => {}) => {
+  const showAlert = (type, title, message, onConfirm = () => {}) => {
     setAlertConfig({ isOpen: true, type, title, message, onConfirm });
-    };
+  };
 
   useEffect(() => {
     fetchStudents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchStudents = async () => {
@@ -50,16 +51,16 @@ export default function StudentsList() {
       setPendingStudents(data.filter(s => s.teacher_approval_status === 'Pending'));
     } catch (error) {
       console.error("Error fetching students:", error);
-      alert("Failed to load students.");
+      // Pinalitan ang alert()
+      showAlert('error', 'Fetch Error', 'Failed to load students.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleApproval = async (studentId, studentName, status) => {
-  const actionText = status === 'Approved' ? 'approve' : 'reject';
+    const actionText = status === 'Approved' ? 'approve' : 'reject';
 
-    // PALITAN ANG confirm():
     showAlert('confirm', 'Confirm Action', `Are you sure you want to ${actionText} ${studentName}?`, async () => {
         setLoading(true);
         try {
@@ -69,9 +70,9 @@ export default function StudentsList() {
             await supabase.from('profiles').update({ teacher_id: null, teacher_approval_status: 'Pending' }).eq('id', studentId);
         }
         fetchStudents();
-        showAlert('success', 'Success!', `Student has been ${status.toLowerCase()}.`); // PALITAN ANG alert()
+        showAlert('success', 'Success!', `Student has been ${status.toLowerCase()}.`); 
         } catch (error) {
-        showAlert('error', 'Failed', error.message); // PALITAN ANG alert()
+        showAlert('error', 'Failed', error.message); 
         } finally {
         setLoading(false);
         }
@@ -79,29 +80,32 @@ export default function StudentsList() {
   };
 
   const handleClearClass = async () => {
-    if (!window.confirm("Are you sure you want to remove ALL enrolled students from your class?")) return;
+    // Pinalitan ang window.confirm() at inilagay ang logic sa loob ng callback
+    showAlert('confirm', 'Clear Class List', 'Are you sure you want to remove ALL enrolled students from your class?', async () => {
+      setLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+        const { error } = await supabase
+          .from('profiles')
+          .update({ teacher_id: null, teacher_approval_status: 'Pending' })
+          .eq('teacher_id', user.id)
+          .eq('teacher_approval_status', 'Approved');
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ teacher_id: null, teacher_approval_status: 'Pending' })
-        .eq('teacher_id', user.id)
-        .eq('teacher_approval_status', 'Approved');
+        if (error) throw error;
 
-      if (error) throw error;
-
-      alert("Your class list has been cleared for the new school year.");
-      fetchStudents();
-    } catch (error) {
-      console.error(error);
-      alert("Failed to clear the class: " + error.message);
-    } finally {
-      setLoading(false);
-    }
+        // Pinalitan ang alert()
+        showAlert('success', 'Class Cleared', 'Your class list has been cleared for the new school year.');
+        fetchStudents();
+      } catch (error) {
+        console.error(error);
+        // Pinalitan ang alert()
+        showAlert('error', 'Clear Failed', "Failed to clear the class: " + error.message);
+      } finally {
+        setLoading(false);
+      }
+    });
   };
 
   const exportClassRecords = async () => {
@@ -118,7 +122,8 @@ export default function StudentsList() {
       if (error) throw error;
 
       if (!results || results.length === 0) {
-        alert("No records found to export.");
+        // Pinalitan ang alert()
+        showAlert('info', 'No Records', 'No records found to export.');
         return;
       }
 
@@ -141,7 +146,8 @@ export default function StudentsList() {
 
     } catch (error) {
       console.error(error);
-      alert("Failed to export records: " + error.message);
+      // Pinalitan ang alert()
+      showAlert('error', 'Export Failed', "Failed to export records: " + error.message);
     }
   };
 
@@ -155,7 +161,6 @@ export default function StudentsList() {
         <h1 style={{ color: '#1F2937', margin: 0 }}>My Students</h1>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-            {/* EXPORT BUTTON */}
             <button style={styles.successBtn} onClick={exportClassRecords}>
                 <FileSpreadsheet size={16} style={{ marginRight: '8px' }} />
                 Export to Excel
@@ -263,13 +268,15 @@ export default function StudentsList() {
           </table>
         )}
       </div>
+
+      {/* ALERT MODAL INTEGRATION */}
       <AlertModal 
-      isOpen={alertConfig.isOpen}
-      type={alertConfig.type}
-      title={alertConfig.title}
-      message={alertConfig.message}
-      onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
-      onConfirm={alertConfig.onConfirm}
+        isOpen={alertConfig.isOpen}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+        onConfirm={alertConfig.onConfirm}
       />
     </div>
   );
