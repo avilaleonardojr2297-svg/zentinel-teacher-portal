@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import appLogo from '../assets/icon.png';
+// BAGO: In-import natin ang AlertModal
+import AlertModal from './AlertModal'; 
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -15,6 +17,19 @@ export default function Layout() {
   const [userName, setUserName] = useState('Teacher Account');
   const [avatarUrl, setAvatarUrl] = useState(null);
 
+  // --- BAGO: ALERT MODAL STATE ---
+  const [alertConfig, setAlertConfig] = useState({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+
+  const showAlert = (type, title, message, onConfirm = () => {}) => {
+    setAlertConfig({ isOpen: true, type, title, message, onConfirm });
+  };
+
   useEffect(() => {
     const getUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -22,11 +37,9 @@ export default function Layout() {
       if (user) {
         setUserEmail(user.email);
 
-        // Option 1: Kunin ang picture galing sa Google Auth Metadata
         let pic = user.user_metadata?.avatar_url || user.user_metadata?.picture;
         let name = user.user_metadata?.full_name || user.user_metadata?.name;
 
-        // Option 2: Kung walang metadata, kunin sa 'profiles' table mo
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name, avatar_url')
@@ -34,7 +47,6 @@ export default function Layout() {
           .single();
 
         if (profile) {
-          // Kung may naka-save na pangalan at picture sa database, ito ang gagamitin
           if (profile.full_name) name = profile.full_name;
           if (profile.avatar_url) pic = profile.avatar_url;
         }
@@ -47,12 +59,12 @@ export default function Layout() {
     getUserData();
   }, []);
 
-  const handleLogout = async () => {
-    const confirmLogout = window.confirm("You are about to log out of the Zentinel Admin Portal. Continue?");
-    if (confirmLogout) {
+  // --- BAGO: In-update ang handleLogout para gumamit ng AlertModal ---
+  const handleLogout = () => {
+    showAlert('confirm', 'Sign Out', 'You are about to log out of the Zentinel Admin Portal. Continue?', async () => {
       await supabase.auth.signOut();
       navigate('/');
-    }
+    });
   };
 
   const isActive = (path) => location.pathname === path;
@@ -144,7 +156,6 @@ export default function Layout() {
             style={isActive('/profile') ? styles.activeNavBtn : styles.navBtn} 
             onClick={() => navigate('/profile')}
           >
-            {/* Siguraduhing in-import mo ang 'Settings' o 'User' sa lucide-react */}
             <UserCircle size={18} style={styles.icon} />
             My Profile
           </button>
@@ -165,6 +176,16 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      {/* BAGO: ALERT MODAL INTEGRATION */}
+      <AlertModal 
+        isOpen={alertConfig.isOpen}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, isOpen: false })}
+        onConfirm={alertConfig.onConfirm}
+      />
     </div>
   );
 }
