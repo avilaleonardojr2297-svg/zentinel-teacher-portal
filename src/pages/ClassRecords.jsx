@@ -61,7 +61,7 @@ export default function ClassRecords() {
       // 3. KUNIN ANG LAHAT NG SCORES + time_used_seconds & earned_difficulty
       const { data: results } = await supabase
         .from('evaluation_results')
-        .select('student_id, topic, subtopic, final_grade, total_correct, total_items, created_at, time_used_seconds, earned_difficulty, maximum_difficulty')
+        .select('student_id, topic, subtopic, final_grade, total_correct, total_items, created_at, time_used_seconds')
         .eq('teacher_id', user.id)
         .order('created_at', { ascending: true });
 
