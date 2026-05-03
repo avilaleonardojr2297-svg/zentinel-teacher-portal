@@ -299,7 +299,7 @@ export default function ClassRecords() {
 
               <div style={{ backgroundColor: '#F3F4F6', border: '1px solid #E5E7EB', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
                 <p style={{ margin: '0 0 5px 0', fontWeight: 'bold', color: '#4B5563', fontSize: '13px' }}>3. AI Complexity Bonus (15%)</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Based on Q-Learning Adjustments {'\n'} Formula: (Earned Difficulty / Max Difficulty) * 15</p>
+                <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>Based on Q-Learning Adjustments <br /> Formula: (Earned Difficulty / Max Difficulty) * 15</p>
                 <p style={{ margin: '8px 0 0 0', fontWeight: 'bold', color: '#374151', textAlign: 'right' }}>= {selectedRecordDetails.breakdown.complexityWeight}%</p>
               </div>
 
